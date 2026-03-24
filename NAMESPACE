@@ -1,0 +1,49 @@
+# Generated manually from merged packages
+
+# xtpretest exports
+export(xtpretest)
+
+# xtmispanel exports
+export(xtmispanel)
+
+# xtcsdq exports
+export(xtcsdq)
+export(print.xtcsdq)
+export(summary.xtcsdq)
+
+# xtfifevd exports
+export(xtfifevd)
+export(print.xtfifevd)
+export(summary.xtfifevd)
+
+# xtpcaus exports
+export(xtpcaus)
+export(grunfeld_panel)
+export(print.xtpcaus)
+export(summary.xtpcaus)
+
+# xtpcmg exports
+export(xtpcmg)
+export(grunfeld_cmg)
+export(print.xtpcmg)
+export(summary.xtpcmg)
+
+# xtqsh exports
+export(xtqsh)
+export(print.xtqsh)
+export(summary.xtqsh)
+
+# xtpqroot exports
+export(xtpqroot)
+export(grunfeld_pqroot)
+export(print.xtpqroot)
+export(summary.xtpqroot)
+
+# Merged imports from stats
+importFrom(stats, approx, binomial, bw.nrd0, coef, complete.cases, cor,
+           dnorm, glm, lm, lm.fit, median, model.frame, model.matrix,
+           na.omit, na.pass, pchisq, pf, pnorm, predict, qnorm, quantile,
+           rnorm, sd, spline, var, vcov)
+
+# Merged imports from utils
+importFrom(utils, head, tail)

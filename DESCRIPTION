@@ -1,0 +1,29 @@
+Package: panelecon
+Type: Package
+Title: Comprehensive Panel Econometric Methods
+Version: 1.0.0
+Authors@R: person("Muhammad Abdullah", "Alkhalaf", email = "muhammedalkhalaf@gmail.com",
+    role = c("aut", "cre", "cph"),
+    comment = c(ORCID = "0009-0002-2677-9246"))
+Description: A comprehensive toolkit for panel data econometrics including
+    pre-testing for unit roots (Hsiao homogeneity tests, Swamy parameter
+    heterogeneity test), cross-sectional dependence testing in quantile
+    regressions, panel Granger causality tests (Fourier Toda-Yamamoto and
+    quantile), group-mean and pooled fully modified OLS estimation, quantile
+    regression slope homogeneity tests, panel quantile unit root tests with
+    common shocks and structural breaks, fixed effects vector decomposition
+    and filtered estimators, and missing data detection and imputation for
+    panel data.
+License: GPL-3
+Encoding: UTF-8
+RoxygenNote: 7.3.3
+Depends: R (>= 3.5.0)
+Imports:
+    stats,
+    utils
+Suggests:
+    testthat (>= 3.0.0),
+    plm,
+    zoo
+Config/testthat/edition: 3
+
