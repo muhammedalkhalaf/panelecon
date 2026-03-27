@@ -1,0 +1,8 @@
+^cran-comments\.md$
+^\.Rproj\.user$
+^paper\.bib$
+^paper\.md$
+^paper\.tex$
+^LICENSE\.md$
+^\.github$
+^data-raw$

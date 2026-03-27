@@ -59,17 +59,17 @@
 #' \doi{10.1016/j.econlet.2022.110809}
 #'
 #' @examples
+#' \donttest{
 #' dat <- grunfeld_pqroot()
 #'
-#' # CIPS(tau) test at 3 quantiles (fast with reps=200)
+#' # CIPS(tau) test at 3 quantiles
 #' res <- xtpqroot(dat, var = "invest", panel_id = "firm",
 #'                 time_id = "year", test = "cipstau",
 #'                 model = "intercept", maxlag = 2L,
-#'                 quantiles = c(0.1, 0.5, 0.9), reps = 200L)
+#'                 quantiles = c(0.1, 0.5, 0.9), reps = 100L)
 #' print(res)
 #'
 #' # tFR test
-#' \donttest{
 #' res2 <- xtpqroot(dat, var = "invest", panel_id = "firm",
 #'                  time_id = "year", test = "tfr",
 #'                  model = "intercept", maxlag = 2L, bootreps = 200L)

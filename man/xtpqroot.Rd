@@ -36,10 +36,12 @@ Corakci, A. and Omay, T. (2023). Is there convergence in renewable energy
 deployment? \emph{Renewable Energy}, 205, 648-662.
 }
 \examples{
+\donttest{
 dat <- grunfeld_pqroot()
 res <- xtpqroot(dat, var = "invest", panel_id = "firm",
                 time_id = "year", test = "cipstau",
-                quantiles = c(0.1, 0.5, 0.9), reps = 200L)
+                quantiles = c(0.1, 0.5, 0.9), reps = 100L)
 print(res)
+}
 }
 \keyword{htest}

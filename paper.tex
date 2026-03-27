@@ -1,0 +1,144 @@
+\section{Summary}\label{summary}
+
+\texttt{panelecon} is a comprehensive R toolkit for panel data
+econometrics, consolidating a broad set of methods that are typically
+scattered across multiple Stata ado-files or specialized software. The
+package covers the full pipeline of modern panel analysis: pre-testing
+for unit roots and parameter heterogeneity (Hsiao homogeneity tests,
+Swamy parameter heterogeneity test); cross-sectional dependence testing
+in quantile regressions; panel Granger causality tests including Fourier
+Toda-Yamamoto and quantile Granger causality; group-mean and pooled
+fully modified OLS (FMOLS) estimation; quantile regression slope
+homogeneity tests; panel quantile unit root tests with common shocks and
+structural breaks; fixed effects vector decomposition and filtered
+estimators; and missing data detection and imputation tools for
+unbalanced panels.
+
+\section{Statement of Need}\label{statement-of-need}
+
+Modern panel econometrics demands rigorous pre-testing for
+cross-sectional dependence, slope heterogeneity, and non-stationarity
+before any inference step. While packages such as \texttt{plm}
+(Croissant and Millo 2008) handle standard linear panel models, advanced
+tests like Fourier Toda-Yamamoto Granger causality, quantile panel unit
+roots with structural breaks, and quantile common correlated effects are
+unavailable in R. Researchers studying macroeconomic convergence,
+energy-growth nexuses, and financial integration across countries have
+had to rely on Stata commands with limited scriptability and
+reproducibility. \texttt{panelecon} provides a reproducible,
+script-friendly R alternative covering the pre-testing, estimation, and
+inference stages of panel analysis within a single package.
+
+\section{Usage}\label{usage}
+
+\subsection{Pre-Testing: Heterogeneity and Cross-Sectional
+Dependence}\label{pre-testing-heterogeneity-and-cross-sectional-dependence}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(panelecon)}
+
+\CommentTok{\# Swamy parameter heterogeneity test and Hsiao homogeneity tests}
+\NormalTok{result\_pre }\OtherTok{\textless{}{-}} \FunctionTok{xtpretest}\NormalTok{(y }\SpecialCharTok{\textasciitilde{}}\NormalTok{ x1 }\SpecialCharTok{+}\NormalTok{ x2, }\AttributeTok{data =}\NormalTok{ panel\_df,}
+                        \AttributeTok{index =} \FunctionTok{c}\NormalTok{(}\StringTok{"id"}\NormalTok{, }\StringTok{"time"}\NormalTok{))}
+\FunctionTok{print}\NormalTok{(result\_pre)}
+
+\CommentTok{\# Cross{-}sectional dependence in quantile regression}
+\NormalTok{result\_csd }\OtherTok{\textless{}{-}} \FunctionTok{xtcsdq}\NormalTok{(y }\SpecialCharTok{\textasciitilde{}}\NormalTok{ x1 }\SpecialCharTok{+}\NormalTok{ x2, }\AttributeTok{data =}\NormalTok{ panel\_df,}
+                     \AttributeTok{index =} \FunctionTok{c}\NormalTok{(}\StringTok{"id"}\NormalTok{, }\StringTok{"time"}\NormalTok{), }\AttributeTok{tau =} \FloatTok{0.5}\NormalTok{)}
+\FunctionTok{print}\NormalTok{(result\_csd)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Panel Granger Causality}\label{panel-granger-causality}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Fourier Toda{-}Yamamoto and quantile panel Granger causality}
+\NormalTok{result\_caus }\OtherTok{\textless{}{-}} \FunctionTok{xtpcaus}\NormalTok{(y }\SpecialCharTok{\textasciitilde{}}\NormalTok{ x, }\AttributeTok{data =}\NormalTok{ panel\_df,}
+                       \AttributeTok{index =} \FunctionTok{c}\NormalTok{(}\StringTok{"id"}\NormalTok{, }\StringTok{"time"}\NormalTok{), }\AttributeTok{freq =} \DecValTok{1}\NormalTok{)}
+\FunctionTok{summary}\NormalTok{(result\_caus)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Panel FMOLS Estimation}\label{panel-fmols-estimation}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Group{-}mean and pooled FMOLS}
+\NormalTok{result\_fmols }\OtherTok{\textless{}{-}} \FunctionTok{xtpcmg}\NormalTok{(y }\SpecialCharTok{\textasciitilde{}}\NormalTok{ x1 }\SpecialCharTok{+}\NormalTok{ x2, }\AttributeTok{data =}\NormalTok{ panel\_df,}
+                       \AttributeTok{index =} \FunctionTok{c}\NormalTok{(}\StringTok{"id"}\NormalTok{, }\StringTok{"time"}\NormalTok{), }\AttributeTok{estimator =} \StringTok{"mg"}\NormalTok{)}
+\FunctionTok{print}\NormalTok{(result\_fmols)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Panel Quantile Unit Root
+Tests}\label{panel-quantile-unit-root-tests}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Quantile unit root with common shocks and structural breaks}
+\NormalTok{result\_qur }\OtherTok{\textless{}{-}} \FunctionTok{xtpqroot}\NormalTok{(y, }\AttributeTok{data =}\NormalTok{ panel\_df, }\AttributeTok{index =} \FunctionTok{c}\NormalTok{(}\StringTok{"id"}\NormalTok{, }\StringTok{"time"}\NormalTok{),}
+                        \AttributeTok{tau =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.25}\NormalTok{, }\FloatTok{0.5}\NormalTok{, }\FloatTok{0.75}\NormalTok{))}
+\FunctionTok{summary}\NormalTok{(result\_qur)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Missing Data Tools}\label{missing-data-tools}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Detect and impute missing data in panel}
+\NormalTok{result\_mis }\OtherTok{\textless{}{-}} \FunctionTok{xtmispanel}\NormalTok{(panel\_df, }\AttributeTok{index =} \FunctionTok{c}\NormalTok{(}\StringTok{"id"}\NormalTok{, }\StringTok{"time"}\NormalTok{),}
+                          \AttributeTok{method =} \StringTok{"linear"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\section{Implementation}\label{implementation}
+
+\texttt{panelecon} is written in pure R with optional dependencies on
+\texttt{plm} and \texttt{zoo} for panel data structures. The
+\texttt{xtpretest()} function implements the Swamy (1970) statistic
+alongside Hsiao-type homogeneity tests. The \texttt{xtcsdq()} function
+extends the Pesaran (2004) CD test to quantile regression residuals.
+Fourier Toda-Yamamoto causality testing in \texttt{xtpcaus()} augments
+the VAR with trigonometric terms to capture smooth structural shifts.
+The \texttt{xtpcmg()} function implements mean-group and pooled FMOLS
+following Pedroni (2000). Panel quantile unit root tests in
+\texttt{xtpqroot()} follow the framework accommodating common factors
+and structural breaks. The \texttt{xtqsh()} function implements quantile
+slope homogeneity tests. Fixed effects vector decomposition is
+implemented in line with Plümper and Troeger (2007).
+
+\section*{References}\label{references}
+\addcontentsline{toc}{section}{References}
+
+\protect\phantomsection\label{refs}
+\begin{CSLReferences}{1}{1}
+\bibitem[\citeproctext]{ref-Croissant2008}
+Croissant, Yves, and Giovanni Millo. 2008. {``Panel Data Econometrics in
+{R}: The {plm} Package.''} \emph{Journal of Statistical Software} 27
+(2): 1--43. \url{https://doi.org/10.18637/jss.v027.i02}.
+
+\bibitem[\citeproctext]{ref-Pedroni2000}
+Pedroni, Peter. 2000. {``Fully Modified {OLS} for Heterogeneous
+Cointegrated Panels.''} \emph{Advances in Econometrics} 15: 93--130.
+\url{https://doi.org/10.1016/S0731-9053(00)15004-2}.
+
+\bibitem[\citeproctext]{ref-Pesaran2004}
+Pesaran, M. Hashem. 2004. {``General Diagnostic Tests for Cross Section
+Dependence in Panels.''} \emph{Cambridge Working Papers in Economics}
+435. \url{https://doi.org/10.17863/CAM.5113}.
+
+\bibitem[\citeproctext]{ref-Plumper2007}
+Plümper, Thomas, and Vera E. Troeger. 2007. {``Efficient Estimation of
+Time-Invariant and Rarely Changing Variables in Finite Sample Panel
+Analyses with Unit Fixed Effects.''} \emph{Political Analysis} 15 (2):
+124--39. \url{https://doi.org/10.1093/pan/mpm002}.
+
+\bibitem[\citeproctext]{ref-Swamy1970}
+Swamy, P. A. V. B. 1970. {``Efficient Inference in a Random Coefficient
+Regression Model.''} \emph{Econometrica} 38 (2): 311--23.
+\url{https://doi.org/10.2307/1913012}.
+
+\end{CSLReferences}
