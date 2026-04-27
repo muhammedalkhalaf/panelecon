@@ -1,4 +1,4 @@
-﻿#' Fixed Effects Filtered and Vector Decomposition for Panel Data
+#' Fixed Effects Filtered and Vector Decomposition for Panel Data
 #'
 #' Estimates panel data models with time-invariant regressors using the Fixed
 #' Effects Vector Decomposition (FEVD), Fixed Effects Filtered (FEF), or

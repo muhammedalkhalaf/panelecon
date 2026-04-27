@@ -1,4 +1,4 @@
-﻿#' Missing Data Detection and Imputation for Panel Data
+#' Missing Data Detection and Imputation for Panel Data
 #'
 #' Detects, diagnoses, and imputes missing values in panel (longitudinal)
 #' data sets.  The function can produce summary tables (Module 1), test the

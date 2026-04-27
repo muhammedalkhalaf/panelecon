@@ -1,4 +1,4 @@
-﻿citHeader("To cite panelecon in publications use:")
+citHeader("To cite panelecon in publications use:")
 
 bibentry(
   bibtype  = "Manual",

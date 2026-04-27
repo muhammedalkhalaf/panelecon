@@ -1,4 +1,4 @@
-﻿#' Panel Quantile Unit Root Tests
+#' Panel Quantile Unit Root Tests
 #'
 #' Tests for a panel unit root using either the CIPS(tau) quantile test
 #' (Yang, Wei & Cai 2022) or the tFR Fourier-smooth-break test

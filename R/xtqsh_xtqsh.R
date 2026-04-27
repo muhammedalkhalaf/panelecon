@@ -1,4 +1,4 @@
-﻿#' Quantile Regression Slope Homogeneity Test for Panel Data
+#' Quantile Regression Slope Homogeneity Test for Panel Data
 #'
 #' Tests the null hypothesis of slope homogeneity in panel quantile regressions.
 #' Implements the S-hat (chi-squared) and D-hat (standard normal) statistics of

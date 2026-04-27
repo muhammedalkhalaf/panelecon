@@ -1,4 +1,4 @@
-﻿#' Tests of No Cross-Sectional Dependence in Panel Quantile Regressions
+#' Tests of No Cross-Sectional Dependence in Panel Quantile Regressions
 #'
 #' Tests the null hypothesis of no cross-sectional error dependence (CSD) in
 #' panel quantile regressions. Implements the T_tau and T-tilde_tau statistics
