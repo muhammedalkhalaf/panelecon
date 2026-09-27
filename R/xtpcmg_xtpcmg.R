@@ -62,11 +62,11 @@
 #'
 #' de Jong, R.M. and Wagner, M. (2022). Panel cointegrating polynomial
 #' regressions. \emph{Annals of Applied Statistics}, 16(1), 416--442.
-#' \doi{10.1214/21-AOAS1536}
+#'
 #'
 #' Wagner, M. and Reichold, K. (2023). Panel cointegrating polynomial
 #' regressions. \emph{Econometric Reviews}, 42(9--10), 782--827.
-#' \doi{10.1080/07474938.2022.2070522}
+#' \doi{10.1080/07474938.2023.2178141}
 #'
 #' @examples
 #' dat <- grunfeld_cmg()

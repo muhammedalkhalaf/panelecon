@@ -39,7 +39,7 @@
 #' Little, R. J. A. (1988). A test of missing completely at random for
 #' multivariate data with missing values.
 #' \emph{Journal of the American Statistical Association}, 83(404), 1198-1202.
-#' \doi{10.1080/01621459.1988.10478714}
+#' \doi{10.1080/01621459.1988.10478722}
 #'
 #' @examples
 #' set.seed(1)

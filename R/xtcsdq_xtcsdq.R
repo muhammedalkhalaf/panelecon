@@ -58,10 +58,10 @@
 #'
 #' @references
 #' Demetrescu, M., Hosseinkouchack, M. and Rodrigues, P.M.M. (2023).
-#' Testing for No Cross-Sectional Error Dependence in Panel Quantile
-#' Regressions.
+#' Tests of no cross-sectional error dependence in panel quantile
+#' regressions.
 #' \emph{Ruhr Economic Papers}, No. 1041.
-#' \doi{10.4419/96973002}
+#' \doi{10.4419/96973210}
 #'
 #' @examples
 #' \donttest{

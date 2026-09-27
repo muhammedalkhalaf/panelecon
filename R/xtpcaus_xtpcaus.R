@@ -75,12 +75,12 @@
 #' Wang, K.M. and Nguyen, T.B. (2022).
 #' A quantile panel-type analysis of income inequality and healthcare
 #' expenditure. \emph{Economic Research}, 35(1), 873--893.
-#' \doi{10.1080/1331677X.2021.1952089}
+#' \doi{10.1080/1331677X.2021.1948436}
 #'
 #' Yilanci, V. and Gorus, M.S. (2020).
 #' Does economic globalization have predictive power for ecological footprint.
 #' \emph{Environmental Science and Pollution Research}, 27, 40552--40562.
-#' \doi{10.1007/s11356-020-09895-x}
+#' \doi{10.1007/s11356-020-10092-9}
 #'
 #' @examples
 #' dat <- grunfeld_panel()

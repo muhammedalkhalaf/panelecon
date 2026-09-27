@@ -63,7 +63,7 @@
 #'
 #' Pesaran, M.H. and Zhou, Q. (2016). Estimation of Time-Invariant Effects in
 #' Static Panel Data Models. \emph{Econometric Reviews}, 37(10), 1137--1171.
-#' \doi{10.1080/07474938.2015.1032164}
+#' \doi{10.1080/07474938.2016.1222225}
 #'
 #' @examples
 #' \donttest{

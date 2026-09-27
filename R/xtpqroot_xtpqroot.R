@@ -48,7 +48,7 @@
 #' @references
 #' Corakci, A. and Omay, T. (2023). Is there convergence in renewable energy
 #' deployment? \emph{Renewable Energy}, 205, 648--662.
-#' \doi{10.1016/j.renene.2023.01.060}
+#' \doi{10.1016/j.renene.2023.01.119}
 #'
 #' Pesaran, M.H. (2007). A simple panel unit root test in the presence of
 #' cross-section dependence. \emph{Journal of Applied Econometrics}, 22,

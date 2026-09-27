@@ -57,7 +57,7 @@
 #' Testing Slope Homogeneity in Quantile Regression Panel Data with an
 #' Application to the Cross-Section of Stock Returns.
 #' \emph{Journal of Financial Econometrics}, 16(2), 211--243.
-#' \doi{10.1093/jjfinec/nbx003}
+#' \doi{10.1093/jjfinec/nbx016}
 #'
 #' Bofinger, E. (1975). Estimation of a Density Function Using Order Statistics.
 #' \emph{Australian Journal of Statistics}, 17(1), 1--7.

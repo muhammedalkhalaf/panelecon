@@ -30,7 +30,7 @@
 #'
 #' Swamy, P. A. V. B. (1970). Efficient inference in a random coefficient
 #' regression model. \emph{Econometrica}, 38(2), 311-323.
-#' \doi{10.2307/1909405}
+#' \doi{10.2307/1913012}
 #'
 #' Pesaran, M. H. (2004). General diagnostic tests for cross section
 #' dependence in panels. \emph{Cambridge Working Paper in Economics}, No. 0435.
