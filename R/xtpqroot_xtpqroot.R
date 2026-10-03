@@ -1,8 +1,8 @@
 #' Panel Quantile Unit Root Tests
 #'
 #' Tests for a panel unit root using either the CIPS(tau) quantile test
-#' (Yang, Wei & Cai 2022) or the tFR Fourier-smooth-break test
-#' (Corakci & Omay 2023).
+#' (Yang, Wei and Cai 2022) or the tFR Fourier-smooth-break test
+#' (Corakci and Omay 2023).
 #'
 #' @param data A data frame in long format.
 #' @param var Character. Name of the variable to test.
@@ -30,18 +30,22 @@
 #'   \item{N}{Integer. Number of panel units.}
 #'   \item{TT}{Integer. Number of time periods.}
 #'   \item{model}{Character. Deterministic specification.}
-#'   For CIPS(tau):
+#' }
+#' For CIPS(tau):
+#' \describe{
 #'   \item{cips}{Numeric. Standard OLS CIPS statistic.}
 #'   \item{cips_pv}{Numeric. Monte Carlo p-value for CIPS.}
 #'   \item{cipstau}{Numeric vector. CIPS(tau) statistics.}
 #'   \item{cipstau_pv}{Numeric vector. Monte Carlo p-values.}
 #'   \item{quantiles}{Numeric vector. Quantile grid used.}
-#'   For tFR:
+#' }
+#' For tFR:
+#' \describe{
 #'   \item{tfr}{Numeric. tFR panel statistic.}
 #'   \item{pvalue}{Numeric. Bootstrap p-value.}
-#'   \item{cv01}{Numeric. 1% bootstrap critical value.}
-#'   \item{cv05}{Numeric. 5% bootstrap critical value.}
-#'   \item{cv10}{Numeric. 10% bootstrap critical value.}
+#'   \item{cv01}{Numeric. 1 percent bootstrap critical value.}
+#'   \item{cv05}{Numeric. 5 percent bootstrap critical value.}
+#'   \item{cv10}{Numeric. 10 percent bootstrap critical value.}
 #'   \item{ind_results}{Data frame of per-panel results.}
 #' }
 #'

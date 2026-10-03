@@ -21,5 +21,10 @@ A comprehensive toolkit for panel data econometrics including:
 \author{
 \strong{Maintainer}: Muhammad Abdullah Alkhalaf \email{muhammedalkhalaf@gmail.com} (\href{https://orcid.org/0009-0002-2677-9246}{ORCID}) [copyright holder]
 
+Authors:
+\itemize{
+  \item Muhammad Abdullah Alkhalaf \email{muhammedalkhalaf@gmail.com} (\href{https://orcid.org/0009-0002-2677-9246}{ORCID}) [copyright holder]
+}
+
 }
 \keyword{internal}

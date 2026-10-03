@@ -13,8 +13,18 @@ export(summary.xtcsdq)
 
 # xtfifevd exports
 export(xtfifevd)
+export(fevd)
+export(fef)
+export(fef_iv)
+export(bw_ratio)
 export(print.xtfifevd)
 export(summary.xtfifevd)
+S3method(print, xtfifevd)
+S3method(summary, xtfifevd)
+S3method(print, summary.xtfifevd)
+S3method(coef, xtfifevd)
+S3method(vcov, xtfifevd)
+S3method(confint, xtfifevd)
 
 # xtpcaus exports
 export(xtpcaus)
@@ -40,10 +50,11 @@ export(print.xtpqroot)
 export(summary.xtpqroot)
 
 # Merged imports from stats
-importFrom(stats, approx, binomial, bw.nrd0, coef, complete.cases, cor,
-           dnorm, glm, lm, lm.fit, median, model.frame, model.matrix,
-           na.omit, na.pass, pchisq, pf, pnorm, predict, qnorm, quantile,
-           rnorm, sd, spline, var, vcov)
+importFrom(stats, approx, as.formula, binomial, bw.nrd0, coef,
+           complete.cases, confint, cor, dnorm, fitted, glm, lm, lm.fit,
+           median, model.frame, model.matrix, na.omit, na.pass, pchisq,
+           pf, pnorm, predict, printCoefmat, qnorm, quantile, residuals,
+           rnorm, sd, spline, terms, var, vcov)
 
 # Merged imports from utils
-importFrom(utils, head, tail)
+importFrom(utils, head, packageVersion, tail)

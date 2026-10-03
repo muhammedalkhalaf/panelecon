@@ -34,7 +34,9 @@
 #'   \item{nboot}{Integer. Number of bootstrap replications.}
 #'   \item{y}{Character. Name of the y variable.}
 #'   \item{x}{Character. Name of the x variable.}
-#'   For PFTY:
+#' }
+#' For PFTY:
+#' \describe{
 #'   \item{fisher}{Numeric. Fisher panel statistic.}
 #'   \item{fisher_df}{Integer. Degrees of freedom (2*N).}
 #'   \item{fisher_pv}{Numeric. Fisher p-value.}
@@ -45,7 +47,9 @@
 #'   \item{ind_freq}{Integer vector. Optimal Fourier frequencies (length N).}
 #'   \item{ind_pval_b}{Numeric vector. Bootstrap p-values (length N).}
 #'   \item{ind_lags}{Integer vector. Selected lag orders (length N).}
-#'   For PQC:
+#' }
+#' For PQC:
+#' \describe{
 #'   \item{quantiles}{Numeric vector. Quantiles tested.}
 #'   \item{wald_xy}{Numeric vector. Wald statistics per quantile (x => y).}
 #'   \item{pval_xy}{Numeric vector. Bootstrap p-values per quantile (x => y).}

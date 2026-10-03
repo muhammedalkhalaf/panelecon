@@ -1,494 +1,259 @@
-#' Fixed Effects Filtered and Vector Decomposition for Panel Data
+#' Panel Fixed Effects Estimation for Time-Invariant Variables
 #'
-#' Estimates panel data models with time-invariant regressors using the Fixed
-#' Effects Vector Decomposition (FEVD), Fixed Effects Filtered (FEF), or
-#' FEF-IV methods. Provides consistent standard errors following Pesaran and
-#' Zhou (2016).
+#' @md
+#' @description
+#' Estimates panel models with time-invariant regressors using FEVD, FEF, or
+#' FEF-IV methods. Standard fixed effects estimation cannot identify
+#' coefficients on time-invariant variables; these methods decompose or filter
+#' the unit effects to recover these coefficients.
 #'
-#' @param formula A formula of the form \code{y ~ x1 + x2} specifying the
-#'   dependent variable and time-varying regressors.
-#' @param data A data frame containing the panel data in long format.
-#' @param index A character vector of length 2: \code{c("id_var", "time_var")}.
-#' @param zinvariants A character vector naming the time-invariant regressors
-#'   (variables that do not vary within panel units).
-#' @param method Estimation method: \code{"fevd"} (default), \code{"fef"}, or
-#'   \code{"fefiv"}.
-#' @param instruments A character vector of instrument variable names. Required
-#'   when \code{method = "fefiv"}.
-#' @param robust Logical. If \code{TRUE}, reports heteroskedasticity-robust
-#'   standard errors for the time-varying part. Default is \code{FALSE}.
+#' @param formula A formula of the form `y ~ x1 + x2 | z1 + z2` where terms
+#'   before `|` are time-varying and terms after `|` are time-invariant. Both
+#'   parts are processed with [stats::model.matrix()], so transformations
+#'   (`log(x)`, `I(x^2)`, `x:w`, `log(y)` on the left-hand side) and factors
+#'   (with their contrasts) are handled as in [stats::lm()]. Intercept columns
+#'   are removed; the model intercept is estimated in stage 2.
+#' @param data A data frame containing the variables.
+#' @param id Character string naming the panel (individual) identifier variable.
+#' @param time Character string naming the time identifier variable.
+#' @param method Estimation method: `"fevd"` (default), `"fef"`, or `"fef_iv"`.
+#' @param instruments For `method = "fef_iv"`, a one-sided formula specifying
+#'   instrumental variables, e.g., `~ iv1 + iv2`.
+#' @param vcov_beta Covariance estimator for the stage 1 (within) coefficients
+#'   `beta`: `"robust"` (default) is the Arellano-type panel-robust matrix of
+#'   Pesaran and Zhou (2018, eq. 18), valid under heteroskedasticity and
+#'   serial correlation within panels; `"classical"` is the homoskedastic
+#'   \eqn{\hat\sigma_e^2 (X'MX)^{-1}}. The chosen matrix is also used inside
+#'   the Pesaran and Zhou variance of `gamma` and of the intercept.
+#' @param na.action How to handle missing values. Default is `na.omit`.
 #'
-#' @return An object of class \code{"xtfifevd"} with components:
-#'   \describe{
-#'     \item{beta_fe}{Numeric vector of FE (within) estimates for time-varying regressors.}
-#'     \item{gamma}{Numeric vector of estimates for time-invariant regressors.}
-#'     \item{alpha}{Intercept estimate.}
-#'     \item{se_beta}{Standard errors for beta_fe.}
-#'     \item{se_gamma}{Pesaran-Zhou corrected standard errors for gamma.}
-#'     \item{se_alpha}{Standard error for alpha.}
-#'     \item{V_gamma_pz}{Pesaran-Zhou variance matrix for gamma (k_z x k_z).}
-#'     \item{V_gamma_fevd}{Raw FEVD variance for gamma (only for FEVD method).}
-#'     \item{delta}{Stage-3 coefficient on the FEVD error component (should be 1).}
-#'     \item{sigma2_e}{Within-unit error variance from FE stage.}
-#'     \item{sigma2_u}{Between-unit variance from FE stage.}
-#'     \item{N}{Number of observations.}
-#'     \item{N_g}{Number of panel units.}
-#'     \item{T_avg}{Average time periods per unit.}
-#'     \item{method}{Method used: "FEVD", "FEF", or "FEF-IV".}
-#'     \item{depvar}{Name of the dependent variable.}
-#'     \item{xvars}{Names of time-varying regressors.}
-#'     \item{zinvariants}{Names of time-invariant regressors.}
-#'   }
-#'
-#' @details
-#' \strong{FEVD} (Plumper & Troeger 2007): Three-stage estimator.
-#' Stage 1 fits a standard within (FE) estimator. Stage 2 decomposes the
-#' unit fixed effects into a part explained by time-invariant regressors plus
-#' a residual. Stage 3 pools all variables. Point estimates are identical to
-#' FEF but the raw Stage-3 SEs are inconsistent (Pesaran & Zhou 2016, Remark 4);
-#' this package uses the corrected Pesaran-Zhou SEs.
-#'
-#' \strong{FEF} (Pesaran & Zhou 2016): Two-stage estimator equivalent to FEVD
-#' in terms of point estimates but using theoretically justified standard errors.
-#'
-#' \strong{FEF-IV}: Instrumental variables version of FEF for endogenous
-#' time-invariant regressors. Requires \code{instruments} with at least as many
-#' variables as \code{zinvariants}.
-#'
-#' @references
-#' Plumper, T. and Troeger, V.E. (2007). Efficient Estimation of Time-Invariant
-#' and Rarely Changing Variables in Finite Sample Panel Analyses with Unit Fixed
-#' Effects. \emph{Political Analysis}, 15(2), 124--139.
-#' \doi{10.1093/pan/mpm002}
-#'
-#' Pesaran, M.H. and Zhou, Q. (2016). Estimation of Time-Invariant Effects in
-#' Static Panel Data Models. \emph{Econometric Reviews}, 37(10), 1137--1171.
-#' \doi{10.1080/07474938.2016.1222225}
-#'
-#' @examples
-#' \donttest{
-#' set.seed(42)
-#' n <- 10; tt <- 15
-#' uid  <- rep(1:n, each = tt)
-#' tval <- rep(1:tt, times = n)
-#' z_i  <- rep(rnorm(n), each = tt)      # time-invariant
-#' x_it <- rnorm(n * tt)                  # time-varying
-#' y    <- 0.5 * x_it + 0.8 * z_i + rnorm(n * tt, sd = 0.5)
-#' dat  <- data.frame(id = uid, time = tval, y = y, x = x_it, z = z_i)
-#'
-#' res <- xtfifevd(y ~ x, data = dat, index = c("id", "time"),
-#'                 zinvariants = "z", method = "fevd")
-#' print(res)
-#' summary(res)
+#' @return An object of class `"xtfifevd"` containing:
+#' \describe{
+#'   \item{coefficients}{Named vector of all coefficients (beta, gamma, `_cons`).
+#'     For `method = "fevd"` these are the stage 3 pooled OLS estimates, which
+#'     equal the FEF estimates (see Details).}
+#'   \item{vcov}{Full variance-covariance matrix of `coefficients` from the
+#'     Pesaran and Zhou (2018) derivation, including the covariances between
+#'     `beta`, `gamma` and the intercept (see Details).}
+#'   \item{beta}{Coefficients on time-varying variables}
+#'   \item{gamma}{Coefficients on time-invariant variables}
+#'   \item{intercept}{Overall intercept}
+#'   \item{delta}{(FEVD only) Stage 3 coefficient on the unexplained unit
+#'     effect \eqn{h_i}; equal to 1 by construction.}
+#'   \item{stage3}{(FEVD only) List with the full stage 3 pooled OLS
+#'     coefficient vector (`coefficients`, including `h`), the naive OLS
+#'     covariance matrix `vcov_naive` and standard errors `se_naive`. These
+#'     naive standard errors are known to be too small for the
+#'     time-invariant coefficients and are returned for reference only.}
+#'   \item{fef}{(FEVD only) The stage 1 and 2 (FEF) coefficients.}
+#'   \item{residuals}{Idiosyncratic (within) residuals from stage 1}
+#'   \item{fitted.values}{Fitted values \eqn{x_{it}'\hat\beta + \bar z_i'\hat\gamma + \hat\alpha}
+#'     (unit effects excluded)}
+#'   \item{sigma2_e}{Variance of the idiosyncratic error}
+#'   \item{sigma2_u}{Variance of the unexplained unit effect: the stage 2
+#'     residual variance minus \eqn{\hat\sigma_e^2 \, \mathrm{mean}(1/T_i)},
+#'     truncated at zero}
+#'   \item{vcov_beta}{The `vcov_beta` choice used}
+#'   \item{V_beta_robust, V_beta_classical}{Both covariance matrices of `beta`}
+#'   \item{V_gamma_pz}{The `gamma` block of `vcov` (Pesaran and Zhou eq. 17 or 51)}
+#'   \item{stage2_residuals}{Unit-level stage 2 residuals}
+#'   \item{N}{Total number of observations}
+#'   \item{N_g}{Number of groups (panels)}
+#'   \item{T_bar}{Average time periods per panel}
+#'   \item{balanced}{Logical, whether the panel is balanced}
+#'   \item{method}{Estimation method used}
+#'   \item{call}{The matched call}
 #' }
 #'
+#' @details
+#' ## Model
+#' The panel model is:
+#' \deqn{y_{it} = \alpha + \alpha_i + x_{it}'\beta + z_i'\gamma + \varepsilon_{it}}
+#'
+#' where \eqn{x_{it}} are time-varying regressors, \eqn{z_i} are time-invariant
+#' regressors, and \eqn{\alpha_i} are individual effects that may be
+#' correlated with \eqn{x_{it}}.
+#'
+#' ## Stage 1 (all methods)
+#' Within (fixed effects) regression of \eqn{y_{it}} on \eqn{x_{it}} yields
+#' \eqn{\hat{\beta}} and the time-averaged FE residuals
+#' \eqn{\bar u_i = \bar y_i - \bar x_i'\hat\beta} (Pesaran and Zhou 2018, eq. 3).
+#'
+#' ## Stage 2
+#' \itemize{
+#'   \item **FEF**: unit-level OLS of \eqn{\bar u_i} on an intercept and
+#'     \eqn{z_i} (Pesaran and Zhou eq. 4 and 5).
+#'   \item **FEF-IV**: unit-level 2SLS using instruments \eqn{r_i}
+#'     (Pesaran and Zhou eq. 48).
+#'   \item **FEVD**: as FEF; the residuals \eqn{h_i} are the unexplained part
+#'     of the unit effect (Plumper and Troeger 2007, eq. 6).
+#' }
+#'
+#' ## Stage 3 (FEVD only)
+#' Pooled OLS of \eqn{y_{it}} on an intercept, \eqn{x_{it}}, \eqn{z_i} and
+#' \eqn{h_i} (Plumper and Troeger 2007, eq. 7). Plumper and Troeger's stage 2
+#' equation (5) is printed without an intercept, but their \eqn{\hat u_i}
+#' (eq. 4) contains the model constant and their stage 3 equation (7) has an
+#' intercept; the package therefore includes an intercept in stage 2, which
+#' makes the stage 3 estimates identical to FEF and the coefficient
+#' \eqn{\delta} on \eqn{h_i} identically equal to 1 (Pesaran and Zhou 2018,
+#' Proposition 3). The identity holds in balanced and unbalanced panels:
+#' with \eqn{(a, \hat\beta, \hat\gamma, 1)} the stage 3 residuals are the
+#' within residuals, which sum to zero within every unit and are orthogonal
+#' to \eqn{x_{it}}, so they satisfy the stage 3 normal equations exactly.
+#' Without the stage 2 intercept the FEVD estimator is in general biased
+#' (Pesaran and Zhou 2018, Section 3.4). Plumper and Troeger are silent on
+#' unbalanced panels; the package runs stage 2 at the unit level without
+#' weights, one observation per panel unit (Pesaran and Zhou's FEF), rather
+#' than at the observation level, where units would be weighted by
+#' \eqn{T_i}.
+#'
+#' The naive stage 3 OLS standard errors of Plumper and Troeger are too
+#' small for the time-invariant coefficients because they ignore that
+#' \eqn{h_i} is a generated regressor (Breusch, Ward, Nguyen and Kompas
+#' 2010, Theorem 3; Greene 2011; Pesaran and Zhou 2018). In a Monte Carlo
+#' check by the package author (400 replications, N = 200, T = 8, two
+#' time-varying and two time-invariant regressors, AR(1) errors with
+#' coefficient 0.8 and heteroskedastic across units, x correlated with the
+#' unit effects) their 95 percent coverage for \eqn{\gamma} was 35 to 40
+#' percent, against 92 to 95 percent for the Pesaran and Zhou standard
+#' errors. They are returned in `stage3$se_naive` for reference only and are
+#' never used for inference.
+#'
+#' ## Rarely changing variables
+#' If a variable after `|` varies within panels, a warning is issued and its
+#' unit (panel) mean is used as \eqn{z_i} in all stages. This is the package's
+#' choice; Plumper and Troeger (2007) do not specify how rarely changing
+#' variables enter stage 2.
+#'
+#' ## Variance estimation
+#' The `gamma` block of `vcov` is Pesaran and Zhou (2018) equation 17 (FEF and
+#' FEVD) or equation 51 (FEF-IV), which account for the estimation
+#' uncertainty of \eqn{\hat\beta} through the matrix `vcov_beta`. The `beta`
+#' block is `vcov_beta` itself (robust eq. 18 by default). The remaining
+#' blocks follow from Pesaran and Zhou eq. (A.11),
+#' \deqn{\hat\gamma - \gamma = Q_{zz}^{-1}\left[N^{-1}\sum_i (z_i - \bar z) v_i - Q_{z\bar x}(\hat\beta - \beta)\right],}
+#' so that \eqn{Cov(\hat\gamma, \hat\beta) = -Q_{zz}^{-1} Q_{z\bar x} Var(\hat\beta)},
+#' and from eq. (5), \eqn{\hat\alpha = \bar u - \bar z'\hat\gamma}, by the delta
+#' method with \eqn{c = \bar x - Q_{z\bar x}' Q_{zz}^{-1} \bar z}:
+#' \eqn{Var(\hat\alpha) = N^{-2}\sum_i w_i^2 \hat v_i^2 + c' Var(\hat\beta) c},
+#' \eqn{w_i = 1 - \bar z' Q_{zz}^{-1}(z_i - \bar z)}, with the corresponding
+#' covariances. For FEF-IV the same derivation is used with
+#' \eqn{Q_{zz}^{-1}(z_i - \bar z)} replaced by \eqn{H_{zr}(r_i - \bar r)}
+#' and \eqn{Q_{z\bar x}} by \eqn{Q_{r\bar x}}. As in Pesaran and Zhou's
+#' eq. (17), the cross term between the unit-level scores and
+#' \eqn{\hat\beta} (the term defined in their eq. 15, negligible under
+#' their condition 16) is dropped in \eqn{Var(\hat\alpha)} and in \eqn{Cov(\hat\gamma, \hat\beta)}.
+#'
+#' @examples
+#' # Simulate panel data
+#' set.seed(123)
+#' N <- 100  # panels
+#' T <- 10   # time periods
+#' n <- N * T
+#'
+#' # Generate data
+#' id <- rep(1:N, each = T)
+#' time <- rep(1:T, N)
+#' alpha_i <- rep(rnorm(N), each = T)  # Fixed effects
+#' z <- rep(rnorm(N), each = T)        # Time-invariant
+#' x <- rnorm(n)                        # Time-varying
+#' y <- 1 + 2 * x + 0.5 * z + alpha_i + rnorm(n, sd = 0.5)
+#'
+#' data <- data.frame(id = id, time = time, y = y, x = x, z = z)
+#'
+#' # Estimate with different methods
+#' fit_fevd <- xtfifevd(y ~ x | z, data = data, id = "id", time = "time")
+#' summary(fit_fevd)
+#' fit_fevd$delta   # equals 1 by construction
+#'
+#' fit_fef <- xtfifevd(y ~ x | z, data = data, id = "id", time = "time",
+#'                     method = "fef")
+#' summary(fit_fef)
+#'
+#' # Transformations in the formula are allowed
+#' fit_log <- fef(y ~ x + I(x^2) | z, data = data, id = "id", time = "time")
+#' coef(fit_log)
+#'
+#' @references
+#' Breusch, T., Ward, M. B., Nguyen, H. and Kompas, T. (2010). On the
+#' fixed-effects vector decomposition. MPRA Paper No. 21452.
+#' \url{https://mpra.ub.uni-muenchen.de/21452/}
+#'
+#' Greene, W. H. (2011). Fixed Effects Vector Decomposition: A Magical Solution
+#' to the Problem of Time-Invariant Variables in Fixed Effects Models?
+#' \emph{Political Analysis}, 19(2), 135-146.
+#' \doi{10.1093/pan/mpq034}
+#'
+#' Plumper, T. and Troeger, V. E. (2007). Efficient Estimation of Time-Invariant
+#' and Rarely Changing Variables in Finite Sample Panel Analyses with Unit Fixed
+#' Effects. \emph{Political Analysis}, 15(2), 124-139.
+#' \doi{10.1093/pan/mpm002}
+#'
+#' Pesaran, M. H. and Zhou, Q. (2018). Estimation of time-invariant effects in
+#' static panel data models. \emph{Econometric Reviews}, 37(10), 1137-1171.
+#' \doi{10.1080/07474938.2016.1222225}
+#'
+#' @seealso [fevd()], [fef()], [fef_iv()], [bw_ratio()]
+#'
 #' @export
-xtfifevd <- function(formula, data, index, zinvariants,
-                     method = c("fevd", "fef", "fefiv"),
+xtfifevd <- function(formula, data, id, time,
+                     method = c("fevd", "fef", "fef_iv"),
                      instruments = NULL,
-                     robust = FALSE) {
+                     vcov_beta = c("robust", "classical"),
+                     na.action = na.omit) {
 
+  call <- match.call()
   method <- match.arg(method)
+  vcov_beta <- match.arg(vcov_beta)
 
-  ## ── Input validation ────────────────────────────────────────────────────
-  if (!inherits(formula, "formula")) {
-    stop("'formula' must be a formula object.", call. = FALSE)
-  }
-  if (!is.data.frame(data)) {
-    stop("'data' must be a data frame.", call. = FALSE)
-  }
-  if (!is.character(index) || length(index) != 2) {
-    stop("'index' must be a character vector of length 2.", call. = FALSE)
-  }
-  if (!all(index %in% names(data))) {
-    stop("Variables in 'index' not found in 'data'.", call. = FALSE)
-  }
-  if (!is.character(zinvariants) || length(zinvariants) < 1) {
-    stop("'zinvariants' must be a character vector of at least one variable name.",
-         call. = FALSE)
-  }
-  if (!all(zinvariants %in% names(data))) {
-    stop("Some variables in 'zinvariants' not found in 'data'.", call. = FALSE)
-  }
-  if (method == "fefiv") {
-    if (is.null(instruments)) {
-      stop("'instruments' must be provided for method = 'fefiv'.", call. = FALSE)
-    }
-    if (length(instruments) < length(zinvariants)) {
-      stop("Number of instruments must be >= number of 'zinvariants'.", call. = FALSE)
-    }
-    if (!all(instruments %in% names(data))) {
-      stop("Some variables in 'instruments' not found in 'data'.", call. = FALSE)
-    }
-  }
+  # Parse the formula: y ~ x1 + x2 | z1 + z2
+  parsed <- .parse_formula(formula, data, id, time, instruments, na.action)
 
-  ivar <- index[1]
-  tvar <- index[2]
+  # Dispatch to appropriate estimator
+  result <- switch(method,
+                   "fevd" = .estimate_fevd(parsed, vcov_beta),
+                   "fef" = .estimate_fef(parsed, vcov_beta),
+                   "fef_iv" = .estimate_fef_iv(parsed, vcov_beta))
 
-  ## ── Prepare data ─────────────────────────────────────────────────────────
-  mf      <- stats::model.frame(formula, data = data, na.action = stats::na.omit)
-  depvar  <- names(mf)[1]
-  xvars   <- names(mf)[-1]
-  k_x     <- length(xvars)
-  k_z     <- length(zinvariants)
+  result$call <- call
+  result$formula <- formula
+  result$method <- toupper(method)
+  result$method <- gsub("_", "-", result$method)
 
-  if (k_x < 1) stop("At least one time-varying regressor required.", call. = FALSE)
-
-  # Complete cases across all variables
-  all_vars <- c(depvar, xvars, zinvariants, ivar, tvar)
-  if (!is.null(instruments)) all_vars <- c(all_vars, instruments)
-  keep <- stats::complete.cases(data[, intersect(all_vars, names(data)), drop = FALSE])
-  data_c <- data[keep, , drop = FALSE]
-
-  panels  <- sort(unique(data_c[[ivar]]))
-  N_g     <- length(panels)
-  N_obs   <- nrow(data_c)
-
-  if (N_g < 2) stop("At least 2 panel units are required.", call. = FALSE)
-
-  T_vals <- as.integer(table(data_c[[ivar]]))
-  T_avg  <- mean(T_vals)
-
-  ## ── Extract matrices ─────────────────────────────────────────────────────
-  Y   <- data_c[[depvar]]
-  X   <- as.matrix(data_c[, xvars, drop = FALSE])
-  Z   <- as.matrix(data_c[, zinvariants, drop = FALSE])
-  uid <- data_c[[ivar]]
-
-  ## ── Stage 1: FE (within) estimation ─────────────────────────────────────
-  ## Within-demean Y and X
-  Yw  <- .within_demean(Y, uid)
-  Xw  <- .within_demean_mat(X, uid)
-  fe  <- .ols_fit(Yw, Xw)    # coefficients (no intercept needed after demeaning)
-
-  beta_fe <- as.numeric(fe$coef)
-
-  ## FE residuals: u_hat = Y - X*beta_fe (includes unit effects)
-  u_hat     <- Y - X %*% beta_fe
-  u_bar_i   <- tapply(u_hat, uid, mean)    # unit-level means
-
-  ## Within residuals for sigma2_e
-  e_hat     <- Yw - Xw %*% beta_fe
-  sigma2_e  <- sum(e_hat^2) / max(N_obs - N_g - k_x, 1)
-
-  ## Between variance
-  sigma2_u  <- max(0, var(u_bar_i) - sigma2_e / T_avg)
-
-  ## SE for beta_fe (HC sandwich)
-  se_beta   <- .fe_se(Xw, e_hat, N_obs, k_x, robust = robust)
-
-  ## ── Stage 2: Decompose unit effects ─────────────────────────────────────
-  ## Get one obs per panel: panel-level Z and u_bar
-  tag_idx  <- !duplicated(uid)
-  Z_cross  <- Z[tag_idx, , drop = FALSE]
-  uid_cross <- uid[tag_idx]
-  u_cross  <- u_bar_i[as.character(uid_cross)]
-
-  ## OLS: u_bar_i ~ z_i + intercept  →  gamma_hat, chat_i
-  stage2   <- .ols_fit(as.numeric(u_cross), cbind(1, Z_cross))
-  gamma_hat <- stage2$coef[-1]
-  alpha_hat <- stage2$coef[1]
-  chat_i    <- as.numeric(u_cross) - cbind(1, Z_cross) %*% stage2$coef
-
-  names(gamma_hat) <- zinvariants
-
-  ## ── Pesaran-Zhou variance (Eq. 17) ──────────────────────────────────────
-  ## Q_zz, V_zz, Q_zxbar
-  Xbar_i   <- do.call(rbind, lapply(panels, function(p) {
-    colMeans(X[uid == p, , drop = FALSE])
-  }))
-
-  Zc    <- scale(Z_cross, scale = FALSE)
-  Xbc   <- scale(Xbar_i,  scale = FALSE)
-  Qzz   <- crossprod(Zc) / N_g
-  Vzz   <- crossprod(Zc * as.numeric(chat_i)^0.5, Zc * as.numeric(chat_i)^0.5) / N_g
-  # Correct V_zz: sum_i chat_i^2 * zc_i zc_i'
-  Vzz   <- matrix(0, k_z, k_z)
-  for (i in seq_len(N_g)) {
-    Vzz <- Vzz + chat_i[i]^2 * outer(Zc[i, ], Zc[i, ])
-  }
-  Vzz   <- Vzz / N_g
-  Qzxbar <- crossprod(Zc, Xbc) / N_g
-
-  ## FE variance (with robust option)
-  if (robust) {
-    V_beta <- .fe_var_robust(Xw, e_hat, N_obs, k_x)
-  } else {
-    V_beta <- sigma2_e * solve(crossprod(Xw))
-  }
-
-  ## V_gamma_pz = (1/N_g) * Qzz^{-1} * [Vzz + Qzxbar * N_g*V_beta * Qzxbar'] * Qzz^{-1}
-  Qzz_inv    <- solve(Qzz)
-  mid        <- Vzz + Qzxbar %*% (N_g * V_beta) %*% t(Qzxbar)
-  V_gamma_pz <- (1 / N_g) * Qzz_inv %*% mid %*% Qzz_inv
-  se_gamma   <- sqrt(pmax(diag(V_gamma_pz), 0))
-  names(se_gamma) <- zinvariants
-
-  ## Alpha SE from stage 2 OLS
-  se_alpha <- sqrt(stage2$var_coef[1, 1])
-
-  ## ── FEVD delta and raw variance ──────────────────────────────────────────
-  delta        <- NULL
-  V_gamma_fevd <- NULL
-  if (method == "fevd") {
-    h_i   <- as.numeric(chat_i)
-    h_full <- h_i[match(uid, uid_cross)]
-    stage3 <- .ols_fit(Y, cbind(X, Z, h_full, 1))
-    delta  <- stage3$coef[k_x + k_z + 1]
-
-    ## Raw FEVD SE for gamma (inconsistent, for diagnostic only)
-    k3    <- k_x + k_z + 2  # X, Z, h, intercept
-    V3    <- stage3$var_coef
-    V_gamma_fevd <- V3[(k_x + 1):(k_x + k_z), (k_x + 1):(k_x + k_z), drop = FALSE]
-  }
-
-  ## ── FEF-IV: 2SLS stage 2 ─────────────────────────────────────────────────
-  if (method == "fefiv") {
-    R_cross  <- as.matrix(data_c[tag_idx, instruments, drop = FALSE])
-    iv_fit   <- .tsls_fit(as.numeric(u_cross), Z_cross, R_cross)
-    gamma_hat <- iv_fit$coef
-    alpha_hat <- iv_fit$alpha
-    names(gamma_hat) <- zinvariants
-
-    ## IV residuals
-    upsilon_i <- as.numeric(u_cross) - Z_cross %*% gamma_hat - alpha_hat
-
-    ## PZ-IV variance (Eq. 51)
-    V_gamma_pz <- .pz_iv_variance(Z_cross, R_cross, Xbar_i, upsilon_i,
-                                   N_g, k_z, V_beta)
-    se_gamma   <- sqrt(pmax(diag(V_gamma_pz), 0))
-    names(se_gamma) <- zinvariants
-    se_alpha   <- sqrt(iv_fit$var_alpha)
-  }
-
-  ## ── Assemble output ───────────────────────────────────────────────────────
-  method_str <- switch(method,
-    fevd  = "FEVD",
-    fef   = "FEF",
-    fefiv = "FEF-IV"
-  )
-
-  out <- list(
-    beta_fe      = beta_fe,
-    gamma        = gamma_hat,
-    alpha        = alpha_hat,
-    se_beta      = se_beta,
-    se_gamma     = se_gamma,
-    se_alpha     = se_alpha,
-    V_gamma_pz   = V_gamma_pz,
-    V_gamma_fevd = V_gamma_fevd,
-    delta        = delta,
-    sigma2_e     = sigma2_e,
-    sigma2_u     = sigma2_u,
-    N            = N_obs,
-    N_g          = N_g,
-    T_avg        = T_avg,
-    method       = method_str,
-    depvar       = depvar,
-    xvars        = xvars,
-    zinvariants  = zinvariants,
-    instruments  = instruments,
-    robust       = robust
-  )
-  class(out) <- "xtfifevd"
-  out
+  class(result) <- "xtfifevd"
+  result
 }
 
 
-## ── Internal helpers ─────────────────────────────────────────────────────
-
-#' @keywords internal
-.within_demean <- function(y, uid) {
-  gm <- tapply(y, uid, mean)
-  as.numeric(y) - as.numeric(gm[as.character(uid)])
-}
-
-#' @keywords internal
-.within_demean_mat <- function(X, uid) {
-  uid_levels <- sort(unique(uid))
-  gm <- do.call(rbind, lapply(uid_levels, function(p) {
-    matrix(colMeans(X[uid == p, , drop = FALSE]), nrow = 1L)
-  }))
-  rownames(gm) <- as.character(uid_levels)
-  X - gm[as.character(uid), , drop = FALSE]
-}
-
-#' @keywords internal
-.ols_fit <- function(y, X) {
-  y <- as.numeric(y)
-  n <- length(y)
-  p <- ncol(X)
-  qr_d    <- qr(X)
-  coef    <- as.numeric(qr.coef(qr_d, y))
-  resid   <- y - as.numeric(X %*% coef)
-  sigma2  <- sum(resid^2) / max(n - p, 1)
-  XtX_inv <- tryCatch(chol2inv(chol(crossprod(X))), error = function(e) solve(crossprod(X)))
-  var_c   <- sigma2 * XtX_inv
-  list(coef = as.numeric(coef), resid = as.numeric(resid),
-       sigma2 = sigma2, var_coef = var_c)
-}
-
-#' @keywords internal
-.fe_se <- function(Xw, e_hat, N_obs, k_x, robust = FALSE) {
-  if (robust) {
-    V <- .fe_var_robust(Xw, e_hat, N_obs, k_x)
-  } else {
-    sig2 <- sum(e_hat^2) / max(N_obs - k_x, 1)
-    V    <- sig2 * tryCatch(solve(crossprod(Xw)), error = function(e) diag(k_x))
-  }
-  sqrt(pmax(diag(V), 0))
-}
-
-#' @keywords internal
-.fe_var_robust <- function(Xw, e_hat, N_obs, k_x) {
-  XtX_inv <- tryCatch(solve(crossprod(Xw)), error = function(e) diag(k_x))
-  meat    <- crossprod(Xw * e_hat)
-  XtX_inv %*% meat %*% XtX_inv
-}
-
-#' @keywords internal
-.tsls_fit <- function(y, Z, R) {
-  Rmat <- cbind(1, R)
-  Zmat <- cbind(1, Z)
-  # First stage: Z ~ R
-  Zhat <- Rmat %*% stats::lm.fit(Rmat, Zmat)$coefficients
-  # Second stage: y ~ Zhat
-  fit2 <- stats::lm.fit(Zhat, y)
-  coef_full <- as.numeric(fit2$coefficients)
-  alpha <- coef_full[1]
-  gamma <- coef_full[-1]
-  # IV residuals
-  resid <- y - Zmat %*% coef_full
-  n  <- length(y)
-  p  <- ncol(Zmat)
-  sig2 <- sum(resid^2) / max(n - p, 1)
-  XtX_inv <- tryCatch(solve(crossprod(Zhat)), error = function(e) diag(p))
-  var_c   <- sig2 * XtX_inv
-  list(coef = gamma, alpha = alpha, resid = resid,
-       var_alpha = var_c[1, 1], var_gamma = var_c[-1, -1, drop = FALSE])
-}
-
-#' @keywords internal
-.pz_iv_variance <- function(Z_cross, R_cross, Xbar_i, upsilon_i, N_g, k_z, V_beta) {
-  k_iv  <- ncol(R_cross)
-  Zc    <- scale(Z_cross, scale = FALSE)
-  Rc    <- scale(R_cross, scale = FALSE)
-  Xbc   <- scale(Xbar_i,  scale = FALSE)
-
-  Qzr   <- crossprod(Zc, Rc) / N_g
-  Qrr   <- crossprod(Rc) / N_g
-  Qrxbar <- crossprod(Rc, Xbc) / N_g
-
-  Vrr   <- matrix(0, k_iv, k_iv)
-  for (i in seq_len(N_g)) {
-    Vrr <- Vrr + upsilon_i[i]^2 * outer(Rc[i, ], Rc[i, ])
-  }
-  Vrr <- Vrr / N_g
-
-  Qrr_inv <- solve(Qrr)
-  Hzr     <- solve(Qzr %*% Qrr_inv %*% t(Qzr)) %*% Qzr %*% Qrr_inv
-  mid_iv  <- Vrr + Qrxbar %*% (N_g * V_beta) %*% t(Qrxbar)
-  (1 / N_g) * Hzr %*% mid_iv %*% t(Hzr)
-}
-
-
-## ── S3 methods ───────────────────────────────────────────────────────────
-
-#' Print method for xtfifevd objects
-#'
-#' @param x An object of class \code{"xtfifevd"}.
-#' @param ... Additional arguments (ignored).
-#' @return Invisibly returns \code{x}.
+#' @describeIn xtfifevd FEVD estimation (3-stage, Plumper and Troeger 2007,
+#'   with Pesaran and Zhou 2018 standard errors)
 #' @export
-print.xtfifevd <- function(x, ...) {
-  cat("\n")
-  cat(strrep("-", 70), "\n")
-  cat(sprintf("  %s Estimation Results (Pesaran-Zhou corrected SEs)\n", x$method))
-  cat(strrep("-", 70), "\n")
-  cat(sprintf("  Dep. variable : %s\n", x$depvar))
-  cat(sprintf("  Observations  : %d\n", x$N))
-  cat(sprintf("  Groups        : %d\n", x$N_g))
-  cat(sprintf("  T (avg)       : %.1f\n", x$T_avg))
-  cat(sprintf("  Method        : %s\n", x$method))
-  cat(strrep("-", 70), "\n\n")
-
-  ## Time-varying part (FE)
-  cat("  Time-varying regressors (FE estimates):\n")
-  cat(sprintf("  %-18s  %12s  %10s  %8s  %s\n",
-              "Variable", "Estimate", "Std. Error", "z value", "p-value"))
-  cat(strrep("-", 70), "\n")
-  for (j in seq_along(x$xvars)) {
-    z_val <- x$beta_fe[j] / max(x$se_beta[j], 1e-14)
-    p_val <- 2 * (1 - stats::pnorm(abs(z_val)))
-    cat(sprintf("  %-18s  %12.6f  %10.6f  %8.3f  %.4f  %s\n",
-                x$xvars[j], x$beta_fe[j], x$se_beta[j], z_val, p_val,
-                .fifevd_stars(p_val)))
-  }
-  cat("\n")
-
-  ## Time-invariant part (PZ corrected)
-  cat(sprintf("  Time-invariant regressors (%s estimates, PZ-corrected SEs):\n",
-              x$method))
-  cat(sprintf("  %-18s  %12s  %10s  %8s  %s\n",
-              "Variable", "Estimate", "Std. Error", "z value", "p-value"))
-  cat(strrep("-", 70), "\n")
-  for (j in seq_along(x$zinvariants)) {
-    z_val <- x$gamma[j] / max(x$se_gamma[j], 1e-14)
-    p_val <- 2 * (1 - stats::pnorm(abs(z_val)))
-    cat(sprintf("  %-18s  %12.6f  %10.6f  %8.3f  %.4f  %s\n",
-                x$zinvariants[j], x$gamma[j], x$se_gamma[j], z_val, p_val,
-                .fifevd_stars(p_val)))
-  }
-  # Intercept
-  z_a <- x$alpha / max(x$se_alpha, 1e-14)
-  p_a <- 2 * (1 - stats::pnorm(abs(z_a)))
-  cat(sprintf("  %-18s  %12.6f  %10.6f  %8.3f  %.4f  %s\n",
-              "_cons", x$alpha, x$se_alpha, z_a, p_a,
-              .fifevd_stars(p_a)))
-  cat(strrep("-", 70), "\n")
-  cat("  *** p<0.01, ** p<0.05, * p<0.10\n")
-  if (!is.null(x$delta)) {
-    cat(sprintf("  Stage-3 delta: %.6f (expected: 1.000000)\n", x$delta))
-  }
-  cat("\n")
-  invisible(x)
+fevd <- function(formula, data, id, time, vcov_beta = c("robust", "classical"),
+                 na.action = na.omit) {
+  xtfifevd(formula, data, id, time, method = "fevd",
+           vcov_beta = match.arg(vcov_beta), na.action = na.action)
 }
 
-#' Summary method for xtfifevd objects
-#'
-#' @param object An object of class \code{"xtfifevd"}.
-#' @param ... Additional arguments (ignored).
-#' @return Invisibly returns \code{object}.
+
+#' @describeIn xtfifevd FEF estimation (2-stage, Pesaran and Zhou 2018)
 #' @export
-summary.xtfifevd <- function(object, ...) {
-  print(object, ...)
-  if (!is.null(object$V_gamma_fevd)) {
-    cat("  Comparison: Raw FEVD SEs (inconsistent) vs PZ-corrected SEs:\n")
-    cat(sprintf("  %-18s  %12s  %12s  %8s\n",
-                "Variable", "PZ SE", "Raw SE", "Ratio"))
-    cat(strrep("-", 60), "\n")
-    for (j in seq_along(object$zinvariants)) {
-      se_pz  <- object$se_gamma[j]
-      se_raw <- sqrt(pmax(object$V_gamma_fevd[j, j], 0))
-      ratio  <- if (se_raw > 1e-14) se_pz / se_raw else NA_real_
-      cat(sprintf("  %-18s  %12.6f  %12.6f  %8.2f\n",
-                  object$zinvariants[j], se_pz, se_raw, ratio))
-    }
-    cat(strrep("-", 60), "\n")
-    cat("  Note: Raw FEVD SEs ignore generated-regressor uncertainty\n")
-    cat("        (Pesaran & Zhou 2016, Remark 4).\n\n")
+fef <- function(formula, data, id, time, vcov_beta = c("robust", "classical"),
+                na.action = na.omit) {
+  xtfifevd(formula, data, id, time, method = "fef",
+           vcov_beta = match.arg(vcov_beta), na.action = na.action)
+}
+
+
+#' @describeIn xtfifevd FEF-IV estimation with instruments
+#' @export
+fef_iv <- function(formula, data, id, time, instruments,
+                   vcov_beta = c("robust", "classical"),
+                   na.action = na.omit) {
+  if (missing(instruments) || is.null(instruments)) {
+    stop("FEF-IV requires instruments. Provide 'instruments' argument.")
   }
-  cat(sprintf("  sigma^2_e (idiosyncratic): %.6f\n", object$sigma2_e))
-  cat(sprintf("  sigma^2_u (unit effects) : %.6f\n", object$sigma2_u))
-  invisible(object)
+  xtfifevd(formula, data, id, time, method = "fef_iv",
+           instruments = instruments, vcov_beta = match.arg(vcov_beta),
+           na.action = na.action)
 }
-
-#' @keywords internal
-.fifevd_stars <- function(p) {
-  if (is.na(p)) return("")
-  if (p < 0.01) return("***")
-  if (p < 0.05) return("**")
-  if (p < 0.10) return("*")
-  return("")
-}
-
