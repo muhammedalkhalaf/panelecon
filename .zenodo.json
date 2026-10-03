@@ -1,0 +1,19 @@
+{
+  "creators": [
+    {
+      "name": "Alkhalaf, Muhammad Abdullah",
+      "orcid": "0009-0002-2677-9246",
+      "affiliation": "Rufyq Elngeh for Academic and Business Services, Riyadh, Saudi Arabia"
+    }
+  ],
+  "license": "GPL-3.0",
+  "upload_type": "software",
+  "access_right": "open",
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/muhammedalkhalaf/panelecon",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}
